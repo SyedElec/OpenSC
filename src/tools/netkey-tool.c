@@ -144,9 +144,9 @@ static void show_certs(sc_card_t *card)
 			printf(", Len=%d\n", (q[2]<<8)|q[3]);
 			if((c=d2i_X509(NULL,&q,f->size))){
 				char buf2[2000];
-				X509_NAME_get_text_by_NID(c->cert_info->subject, NID_commonName, buf2,sizeof(buf2));
+				X509_NAME_get_text_by_NID(X509_get_subject_name(c), NID_commonName, buf2,sizeof(buf2));
 				printf("  Subject-CN: %s\n", buf2);
-				X509_NAME_get_text_by_NID(c->cert_info->issuer, NID_commonName, buf2,sizeof(buf2));
+				X509_NAME_get_text_by_NID(X509_get_issuer_name(c), NID_commonName, buf2,sizeof(buf2));
 				printf("  Issuer-CN:  %s\n", buf2);
 				X509_free(c);
 			} else printf("  Invalid Certificate-Data\n");
@@ -558,7 +558,9 @@ int main(
 		exit(1);
 	}
 	printf("\nCard detected (driver: %s)\nATR:", card->driver->name);
-	for(i=0;i<card->atr.len;++i) printf("%c%02X", i?':':' ', card->atr.value[i]); printf("\n");
+	for (i = 0; i < card->atr.len; ++i)
+		printf("%c%02X", i?':':' ', card->atr.value[i]);
+	printf("\n");
 
 	if((r = sc_lock(card))<0){
 		fprintf(stderr,"Lock failed: %s\n", sc_strerror(r));

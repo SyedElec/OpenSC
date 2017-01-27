@@ -583,7 +583,10 @@ if test "${enable_pcsc}" = "yes"; then
 	if test "${WIN32}" != "yes"; then
 		PKG_CHECK_EXISTS(
 			[libpcsclite],
-			[PKG_CHECK_MODULES([PCSC], [libpcsclite])]
+			[PKG_CHECK_MODULES([PCSC], [libpcsclite >= 1.6.5],
+				[AC_DEFINE([PCSCLITE_GOOD], [1], [Sufficient version of PCSC-Lite with all the required features])],
+				[:]
+			)]
 		)
 		if test -z "${PCSC_CFLAGS}"; then
 			case "${host}" in
@@ -795,11 +798,11 @@ AC_CONFIG_FILES([
 	src/Makefile
 	src/common/Makefile
 	src/libopensc/Makefile
-	src/libopensc/libopensc.pc
 	src/libsm/Makefile
 	src/pkcs11/Makefile
 	src/pkcs11/versioninfo-pkcs11.rc
 	src/pkcs11/versioninfo-pkcs11-spy.rc
+	src/pkcs11/opensc-pkcs11.pc
 	src/pkcs15init/Makefile
 	src/scconf/Makefile
 	src/tests/Makefile

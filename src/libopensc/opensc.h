@@ -673,12 +673,14 @@ typedef struct {
 #define SC_CTX_FLAG_PARANOID_MEMORY			0x00000002
 #define SC_CTX_FLAG_DEBUG_MEMORY			0x00000004
 #define SC_CTX_FLAG_ENABLE_DEFAULT_DRIVER	0x00000008
+#define SC_CTX_FLAG_DISABLE_POPUPS			0x00000010
 
 typedef struct sc_context {
 	scconf_context *conf;
 	scconf_block *conf_blocks[3];
 	char *app_name;
 	int debug;
+	int reopen_log_file;
 	unsigned long flags;
 
 	FILE *debug_file;
@@ -1265,7 +1267,7 @@ int sc_format_oid(struct sc_object_id *oid, const char *in);
  * Compares two sc_object_id objects
  * @param  oid1  the first sc_object_id object
  * @param  oid2  the second sc_object_id object
- * @return 1 if the oids are equal and a non-zero value otherwise
+ * @return 1 if the oids are equal and a zero value otherwise
  */
 int sc_compare_oid(const struct sc_object_id *oid1, const struct sc_object_id *oid2);
 /**

@@ -90,6 +90,7 @@ static int sc_pkcs15emu_add_pin(sc_pkcs15_card_t *p15card,
 	info.attrs.pin.flags             = flags;
 	info.attrs.pin.pad_char          = pad_char;
 	info.tries_left        = tries_left;
+	info.logged_in = SC_PIN_STATE_UNKNOWN;
 
 	if (path)
 		info.path = *path;
@@ -242,8 +243,7 @@ static int infocamere_1200_init(sc_pkcs15_card_t * p15card)
 
 	if (r != SC_SUCCESS || file->size > 255) {
 		/* Not EF.GDO */
-		if (file)
-			sc_file_free(file);
+		sc_file_free(file);
 		return SC_ERROR_WRONG_CARD;
 	}
 

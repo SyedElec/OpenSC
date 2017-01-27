@@ -137,6 +137,7 @@ sc_pkcs15_decode_aodf_entry(struct sc_pkcs15_card *p15card, struct sc_pkcs15_obj
 	/* Fill in defaults */
 	memset(&info, 0, sizeof(info));
 	info.tries_left = -1;
+	info.logged_in = SC_PIN_STATE_UNKNOWN;
 
 	r = sc_asn1_decode(ctx, asn1_auth_type, *buf, *buflen, buf, buflen);
 	if (r == SC_ERROR_ASN1_END_OF_CONTENTS)
@@ -313,7 +314,8 @@ _sc_pkcs15_verify_pin(struct sc_pkcs15_card *p15card, struct sc_pkcs15_object *p
 	struct sc_pin_cmd_data data;
 
 	LOG_FUNC_CALLED(ctx);
-	sc_log(ctx, "PIN(type:%X;method:%X;len:)", auth_info->auth_type, auth_info->auth_method, pinlen);
+	sc_log(ctx, "PIN(type:%X; method:%X; value(%p:%i)", auth_info->auth_type, auth_info->auth_method,
+		pincode, pinlen);
 
 	if (pinlen > SC_MAX_PIN_SIZE)
 		LOG_TEST_RET(ctx, SC_ERROR_INVALID_PIN_LENGTH, "Invalid PIN size");
@@ -368,6 +370,7 @@ _sc_pkcs15_verify_pin(struct sc_pkcs15_card *p15card, struct sc_pkcs15_object *p
 	if(p15card->card->reader->capabilities & SC_READER_CAP_PIN_PAD) {
 		if (!pincode && !pinlen)
 			data.flags |= SC_PIN_CMD_USE_PINPAD;
+
 		if (auth_info->attrs.pin.flags & SC_PKCS15_PIN_FLAG_SO_PIN)
 			data.pin1.prompt = "Please enter SO PIN";
 		else
@@ -404,7 +407,7 @@ int sc_pkcs15_change_pin(struct sc_pkcs15_card *p15card,
 	struct sc_context *ctx = p15card->card->ctx;
 	struct sc_pin_cmd_data data;
 	struct sc_pkcs15_auth_info *auth_info = (struct sc_pkcs15_auth_info *)pin_obj->data;
-	struct sc_card *card = p15card->card;
+	struct sc_card *card;
 	int r;
 
 	LOG_FUNC_CALLED(ctx);
@@ -653,7 +656,11 @@ void sc_pkcs15_pincache_add(struct sc_pkcs15_card *p15card, struct sc_pkcs15_obj
 
 	LOG_FUNC_CALLED(ctx);
 
-	if (!p15card->opts.use_pin_cache)   {
+	if (!pin || !pinlen)   {
+		sc_log(ctx, "No cache for zero length PIN");
+		return;
+	}
+	else if (!p15card->opts.use_pin_cache)   {
 		sc_log(ctx, "PIN caching not enabled");
 		return;
 	}

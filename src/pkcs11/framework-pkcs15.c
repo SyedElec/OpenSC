@@ -486,6 +486,9 @@ CK_RV C_GetTokenInfo(CK_SLOT_ID slotID, CK_TOKEN_INFO_PTR pInfo)
 		goto out;
 	}
 
+	if (slot->p11card == NULL)
+		return CKR_TOKEN_NOT_PRESENT;
+
 	fw_data = (struct pkcs15_fw_data *) slot->p11card->fws_data[slot->fw_data_idx];
 	if (!fw_data)
 		return sc_to_cryptoki_error(SC_ERROR_INTERNAL, "C_GetTokenInfo");
@@ -960,7 +963,7 @@ pkcs15_init_slot(struct sc_pkcs15_card *p15card, struct sc_pkcs11_slot *slot,
 		}
 		else   {
 			if (auth->label[0])
-				snprintf(label, sizeof(label), "%.*s: %s", (int) sizeof auth->label, auth->label, p15card->tokeninfo->label);
+				snprintf(label, sizeof(label), "%.*s (%s)", (int) sizeof auth->label, auth->label, p15card->tokeninfo->label);
 			else
 				snprintf(label, sizeof(label), "%s", p15card->tokeninfo->label);
 			slot->token_info.flags |= CKF_LOGIN_REQUIRED;

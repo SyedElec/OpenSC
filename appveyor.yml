@@ -1,11 +1,5 @@
 version: 0.16.0.{build}
 
-#init:
-#  # Exclude combinations allowed to fail
-#  - if "%Environment%" == "VSVER=14" (if "%Configuration%" == "Release" (exit /b 1))
-#  - if "%Environment%" == "VSVER=14" (if "%Configuration%" == "Debug" (exit /b 1))
-#  - if "%Environment%" == "VSVER=10" (if "%Platform%" == "x64" (exit /b 1))
-
 platform:
   - x86
   - x64
@@ -18,22 +12,15 @@ configuration:
 
 environment:
   matrix:
-    # - VSVER: 14
+    - VSVER: 14
     - VSVER: 12
-    # - VSVER: 10
+    - VSVER: 10
 
 matrix:
-  fast_finish: true     # set this flag to immediately finish build once one of the jobs fails.
   allow_failures:
     # not included in AppVeyor right now
     - platform: x64
       VSVER: 10
-    # does currently not build zlib out of the box
-    - configuration: Release
-      VSVER: 14
-    # does currently not build zlib out of the box
-    - configuration: Debug
-      VSVER: 14
 
 install:
   - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
@@ -43,7 +30,6 @@ install:
   - date /T & time /T
   - set PATH=C:\cygwin\bin;%PATH%
   - set OPENSSL_VER=1_0_2e
-  - set ZLIB_VER=128
   - set ZLIB_VER_DOT=1.2.8
   - ps: $env:PACKAGE_NAME=(git describe --tags)
   - ps: >-
@@ -52,13 +38,13 @@ install:
         $env:ENV_PLATFORM="x86"
         $env:OPENSSL_PF="Win32"
         $env:NMAKE_ARCH=""
-        $env:ARTIFACT="OpenSC-${env:PACKAGE_NAME}-win32_vs${env:VSVER}-${env:CONFIGURATION}.msi"
+        $env:ARTIFACT="OpenSC-win32_vs${env:VSVER}-${env:CONFIGURATION}.msi"
       } Else {
         $env:VCVARS_PLATFORM="amd64"
         $env:ENV_PLATFORM="x64"
         $env:OPENSSL_PF="Win64"
         $env:NMAKE_ARCH="BUILD_ON=WIN64 BUILD_FOR=WIN64"
-        $env:ARTIFACT="OpenSC-${env:PACKAGE_NAME}-win64_vs${env:VSVER}-${env:CONFIGURATION}.msi"
+        $env:ARTIFACT="OpenSC-win64_vs${env:VSVER}-${env:CONFIGURATION}.msi"
       }
   - ps: >-
       If ($env:Configuration -Like "*Debug*") {
@@ -72,7 +58,7 @@ install:
         }
         $env:NMAKE_EXTRA="OPENSSL_DEF=/DENABLE_OPENSSL ${env:NMAKE_EXTRA}"
         If (!(Test-Path zlib.zip )) {
-           appveyor DownloadFile "https://prdownloads.sourceforge.net/libpng/zlib${env:ZLIB_VER}.zip" -FileName zlib.zip
+           appveyor DownloadFile "https://github.com/madler/zlib/archive/v${env:ZLIB_VER_DOT}.zip" -FileName zlib.zip
         }
         7z x zlib.zip -oC:\
         Rename-Item -path "c:\zlib-${env:ZLIB_VER_DOT}" -newName "zlib"
@@ -108,7 +94,7 @@ build_script:
   - cd win32 && nmake /f Makefile.mak %NMAKE_ARCH% %NMAKE_EXTRA% VSVER=%VSVER% OpenSC.msi
   - move OpenSC.msi %ARTIFACT%
   - appveyor PushArtifact %ARTIFACT%
-  # put all pdb files for dump analysis, but this consume approx 100 MB per build
+  # put all pdb files for dump analysis, but this consumes approx 100 MB per build
   - ps: >-
       If ($env:Configuration -Like "*Debug*") {
         Get-ChildItem -recurse c:\projects\OpenSC -exclude vc*.pdb *.pdb | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
